@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "author": "FleetTracker",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 150, "left": -100, "attrs": { "value": "50" } },
+    { "type": "wokwi-potentiometer", "id": "pot2", "top": 150, "left": 50, "attrs": { "value": "50" } },
+    { "type": "wokwi-pushbutton", "id": "btn1", "top": 150, "left": 200, "attrs": {"color": "green"} },
+    { "type": "wokwi-pushbutton", "id": "btn2", "top": 150, "left": 280, "attrs": {"color": "red"} },
+    { "type": "wokwi-led", "id": "led_g", "top": -60, "left": 50, "attrs": { "color": "green" } },
+    { "type": "wokwi-led", "id": "led_r", "top": -60, "left": 100, "attrs": { "color": "red" } },
+    { "type": "wokwi-led", "id": "led_y", "top": -60, "left": 150, "attrs": { "color": "yellow" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": -20, "left": 50, "attrs": { "resistance": "220" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": -20, "left": 100, "attrs": { "resistance": "220" } },
+    { "type": "wokwi-resistor", "id": "r3", "top": -20, "left": 150, "attrs": { "resistance": "220" } }
+  ],
+  "connections": [
+    ["pot1:SIG", "esp:34", "green", ["v0"]],
+    ["pot1:VCC", "esp:3V3", "red", ["v0"]],
+    ["pot1:GND", "esp:GND.1", "black", ["v0"]],
+    ["pot2:SIG", "esp:35", "blue", ["v0"]],
+    ["pot2:VCC", "esp:3V3", "red", ["v0"]],
+    ["pot2:GND", "esp:GND.1", "black", ["v0"]],
+    ["btn1:1.l", "esp:12", "orange", ["v0"]],
+    ["btn1:2.r", "esp:GND.1", "black", ["v0"]],
+    ["btn2:1.l", "esp:14", "purple", ["v0"]],
+    ["btn2:2.r", "esp:GND.1", "black", ["v0"]],
+    ["esp:25", "r1:1", "green", ["v0"]],
+    ["r1:2", "led_g:A", "green", ["v0"]],
+    ["led_g:C", "esp:GND.1", "black", ["v0"]],
+    ["esp:26", "r2:1", "red", ["v0"]],
+    ["r2:2", "led_r:A", "red", ["v0"]],
+    ["led_r:C", "esp:GND.1", "black", ["v0"]],
+    ["esp:27", "r3:1", "yellow", ["v0"]],
+    ["r3:2", "led_y:A", "yellow", ["v0"]],
+    ["led_y:C", "esp:GND.1", "black", ["v0"]]
+  ],
+  "dependencies": {}
+}

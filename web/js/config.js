@@ -2,29 +2,21 @@
 const CONFIG = {
     // Configurações do MQTT (HiveMQ Cloud)
     mqtt: {
-        // Substitua pelo host do seu cluster HiveMQ Cloud
-        host: 'wss://SEU_CLUSTER.s1.eu.hivemq.cloud:8884/mqtt',
-        // Credenciais criadas no Access Management do HiveMQ
+        host: 'wss://02056c0680db404c8459ccfb6b33a21c.s1.eu.hivemq.cloud:8884/mqtt',
         username: 'dashboard-web',
-        password: 'SuaSenhaAqui',
-        // ID da frota (usado na raiz dos tópicos)
+        password: 'Asd12345',
         fleetId: 'logistics-01'
     },
     
     // Configurações do Banco de Dados (Supabase)
-    // Opcional para bonificação
     supabase: {
-        // Substitua pela URL do seu projeto
-        url: 'https://SEU_PROJETO.supabase.co',
-        // Substitua pela anon key (public)
-        anonKey: 'SUA_ANON_KEY'
+        url: 'https://lcyzckunfxvxkdhuhavf.supabase.co',
+        anonKey: 'sb_publishable_1jIJnuhdTXkSUhV5ho2JqA_RZExfM5X'
     },
     
     // Configurações do Mapa
     map: {
-        // Coordenadas iniciais do centro do mapa (São Paulo)
         center: [-23.5505, -46.6333],
-        // Zoom inicial
         zoom: 13
     }
 };
