@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FleetTracker - Monitoramento em Tempo Real</title>
+    <meta name="description" content="Dashboard de monitoramento de frota via MQTT em tempo real">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.css -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🚛</span>
+                <h1>FleetTracker</h1>
+            </div>
+            <div class="connection-status" id="connection-status">
+                <span class="status-indicator disconnected"></span>
+                <span class="status-text">Desconectado</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Sidebar Left: Vehicles & Commands -->
+            <aside class="sidebar left-sidebar">
+                <section class="panel">
+                    <h2>Frota</h2>
+                    <ul class="vehicle-list" id="vehicle-list">
+                        <!-- Vehículos serão injetados aqui -->
+                    </ul>
+                </section>
+
+                <section class="panel command-panel">
+                    <h2>Comandos Rápidos</h2>
+                    <div class="selected-vehicle" id="selected-vehicle-display">
+                        Selecione um veículo no mapa ou na lista
+                    </div>
+                    <div class="command-buttons">
+                        <button id="btn-stop" class="cmd-btn btn-danger" disabled>PARAR</button>
+                        <button id="btn-honk" class="cmd-btn btn-warning" disabled>BUZINAR</button>
+                    </div>
+                    <div id="command-feedback" class="command-feedback"></div>
+                </section>
+                
+                <section class="panel">
+                    <h2>Últimos Alertas</h2>
+                    <div class="alerts-list" id="alerts-list">
+                        <!-- Alertas serão injetados aqui -->
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Center: Map -->
+            <section class="map-container">
+                <div id="map"></div>
+            </section>
+
+            <!-- Sidebar Right: Telemetry & Logs -->
+            <aside class="sidebar right-sidebar">
+                <section class="panel">
+                    <h2>Velocidade (km/h)</h2>
+                    <div class="chart-container">
+                        <canvas id="speedChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Bateria (%)</h2>
+                    <div class="chart-container gauge-container">
+                        <canvas id="batteryGauge"></canvas>
+                    </div>
+                </section>
+
+                <section class="panel mqtt-log-panel">
+                    <h2>MQTT Logs</h2>
+                    <div class="mqtt-logs" id="mqtt-logs">
+                        <!-- Logs MQTT -->
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <footer class="app-footer">
+            <p>Projeto V2 - N461: Sistemas Multimídia e Distribuídos | MQTT over WebSockets</p>
+        </footer>
+    </div>
+
+    <!-- Scripts via CDN -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- App Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/mqtt-client.js"></script>
+    <script src="js/commands.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
