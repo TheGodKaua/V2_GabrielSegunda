@@ -58,8 +58,8 @@ FExrpq5ZBVbigPSTxNBlEcIVlsHKI0AfHTgM6L2ITaKfhM5mJeGaRPpsZ0E=
 #define LED_YELLOW    27
 
 // ---- Base coordinates (center of simulation area) ----
-const float BASE_LAT = -23.5605;  // São Paulo oeste
-const float BASE_LNG = -46.6533;
+const float BASE_LAT = -18.9286;  // Uberlândia oeste
+const float BASE_LNG = -48.2872;
 const float LAT_RANGE = 0.05;     // ±0.05 degrees (~5.5 km)
 const float LNG_RANGE = 0.05;
 

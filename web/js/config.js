@@ -16,7 +16,7 @@ const CONFIG = {
     
     // Configurações do Mapa
     map: {
-        center: [-23.5505, -46.6333],
+        center: [-18.9186, -48.2772], // Uberlândia - MG
         zoom: 13
     }
 };

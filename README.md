@@ -12,10 +12,10 @@ Um **Sistema de Monitoramento de Frota Distribuído** que rastreia veículos em 
 - Igor dos Reis Alves
 
 ## 🌐 Links
-- **Interface Web (Dashboard)**: [Acessar a Aplicação na Vercel] *(Substitua pelo seu link gerado após o deploy)*
-- **Simulador 1 (Caminhão 01)**: [Link Wokwi] *(Substitua pelo link do seu projeto salvo)*
-- **Simulador 2 (Caminhão 02)**: [Link Wokwi] *(Substitua pelo link do seu projeto salvo)*
-- **Simulador 3 (Moto 01)**: [Link Wokwi] *(Substitua pelo link do seu projeto salvo)*
+- **Interface Web (Dashboard)**: [Acessar a Aplicação na Vercel](https://v2-gabriel-segunda.vercel.app/)
+- **Simulador 1 (Caminhão 01)**: [Link Wokwi](https://wokwi.com/projects/466303442955891713)
+- **Simulador 2 (Caminhão 02)**: [Link Wokwi](https://wokwi.com/projects/466303557378611201)
+- **Simulador 3 (Moto 01)**: [Link Wokwi](https://wokwi.com/projects/466303604732313601)
 
 ## 🏗️ Arquitetura
 
