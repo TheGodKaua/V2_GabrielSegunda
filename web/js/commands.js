@@ -1,6 +1,7 @@
 // commands.js - Lida com envio de comandos para os veículos
 class CommandManager {
     constructor() {
+        this.btnStart = document.getElementById('btn-start');
         this.btnStop = document.getElementById('btn-stop');
         this.btnHonk = document.getElementById('btn-honk');
         this.feedbackEl = document.getElementById('command-feedback');
@@ -10,6 +11,10 @@ class CommandManager {
     }
 
     setupListeners() {
+        this.btnStart.addEventListener('click', () => {
+            this.sendCommand('start');
+        });
+
         this.btnStop.addEventListener('click', () => {
             this.sendCommand('stop');
         });
@@ -24,6 +29,7 @@ class CommandManager {
         const display = document.getElementById('selected-vehicle-display');
         display.textContent = `Veículo selecionado: ${vehicleId}`;
         
+        this.btnStart.disabled = false;
         this.btnStop.disabled = false;
         this.btnHonk.disabled = false;
         this.showFeedback('', '');
@@ -32,6 +38,7 @@ class CommandManager {
     sendCommand(command, params = {}) {
         if (!this.selectedVehicle) return;
 
+        this.btnStart.disabled = true;
         this.btnStop.disabled = true;
         this.btnHonk.disabled = true;
         this.showFeedback(`Enviando comando ${command.toUpperCase()}...`, 'text-warning');
@@ -62,6 +69,7 @@ class CommandManager {
 
     resetButtons() {
         if (this.selectedVehicle) {
+            this.btnStart.disabled = false;
             this.btnStop.disabled = false;
             this.btnHonk.disabled = false;
         }

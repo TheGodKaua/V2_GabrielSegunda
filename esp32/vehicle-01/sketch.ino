@@ -82,6 +82,7 @@ char topicBattery[80];
 char topicStatus[80];
 char topicAlerts[80];
 char topicCmdStop[80];
+char topicCmdStart[80];
 char topicCmdHonk[80];
 char topicCmdResponse[80];
 
@@ -92,6 +93,7 @@ void buildTopics() {
     snprintf(topicStatus, 80, "fleet/%s/%s/status", FLEET_ID, VEHICLE_ID);
     snprintf(topicAlerts, 80, "fleet/%s/%s/alerts", FLEET_ID, VEHICLE_ID);
     snprintf(topicCmdStop, 80, "fleet/%s/%s/commands/stop", FLEET_ID, VEHICLE_ID);
+    snprintf(topicCmdStart, 80, "fleet/%s/%s/commands/start", FLEET_ID, VEHICLE_ID);
     snprintf(topicCmdHonk, 80, "fleet/%s/%s/commands/honk", FLEET_ID, VEHICLE_ID);
     snprintf(topicCmdResponse, 80, "fleet/%s/%s/commands/response", FLEET_ID, VEHICLE_ID);
 }
@@ -115,6 +117,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         currentStatus = 0;  // stopped
         publishStatus();
         sendResponse("stop_executed");
+    }
+
+    // Handle start command
+    if (String(topic) == String(topicCmdStart)) {
+        currentStatus = 2;  // moving
+        publishStatus();
+        sendResponse("start_executed");
     }
 
     // Handle honk command
@@ -158,6 +167,7 @@ void connectMQTT() {
             
             // Subscribe to commands (QoS 0 for pubsubclient, though QoS 1/2 handled by broker)
             mqtt.subscribe(topicCmdStop, 0);
+            mqtt.subscribe(topicCmdStart, 0);
             mqtt.subscribe(topicCmdHonk, 0);
             
             // Publish online status (retained)
@@ -177,13 +187,18 @@ void publishStatus() {
 }
 
 void publishTelemetry() {
-    // Read potentiometers (0–4095 on ESP32)
-    int potLat = analogRead(POT_LAT_PIN);
-    int potLng = analogRead(POT_LNG_PIN);
+    static float lat = BASE_LAT;
+    static float lng = BASE_LNG;
 
-    // Map to coordinate range
-    float lat = BASE_LAT + ((potLat / 4095.0) * 2.0 - 1.0) * LAT_RANGE;
-    float lng = BASE_LNG + ((potLng / 4095.0) * 2.0 - 1.0) * LNG_RANGE;
+    // Apenas lê os potenciômetros e atualiza a posição se estiver em movimento (status == 2)
+    if (currentStatus == 2) {
+        int potLat = analogRead(POT_LAT_PIN);
+        int potLng = analogRead(POT_LNG_PIN);
+
+        // Map to coordinate range
+        lat = BASE_LAT + ((potLat / 4095.0) * 2.0 - 1.0) * LAT_RANGE;
+        lng = BASE_LNG + ((potLng / 4095.0) * 2.0 - 1.0) * LNG_RANGE;
+    }
 
     // Simulate speed based on status
     float speed = 0;
