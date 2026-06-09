@@ -65,6 +65,12 @@ class CommandManager {
             this.showFeedback('Comando recebido pelo veículo!', 'text-success');
             this.resetButtons();
         }
+        
+        if (payload.result === 'honk_executed') {
+            if (window.mapClient) {
+                window.mapClient.triggerHonk(vehicleId);
+            }
+        }
     }
 
     resetButtons() {
