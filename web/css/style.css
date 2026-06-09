@@ -218,7 +218,8 @@ body {
     transform: scale(0.95);
 }
 
-.btn-danger { background-color: var(--color-danger); }
+.btn-success { background-color: var(--color-success); color: #fff; }
+.btn-danger { background-color: var(--color-danger); color: #fff; }
 .btn-warning { background-color: var(--color-warning); color: #000; }
 
 .command-feedback {
