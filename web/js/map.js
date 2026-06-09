@@ -93,6 +93,21 @@ class MapManager {
             this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
         }
     }
+
+    triggerHonk(vehicleId) {
+        const marker = this.markers[vehicleId];
+        if (marker) {
+            const el = marker.getElement();
+            if (el) {
+                const wave = document.createElement('div');
+                wave.className = 'sound-wave';
+                el.appendChild(wave);
+                setTimeout(() => {
+                    if (el.contains(wave)) el.removeChild(wave);
+                }, 1000);
+            }
+        }
+    }
 }
 
 const mapClient = new MapManager();
