@@ -258,8 +258,8 @@ void setup() {
 
     buildTopics();
     
-    // Set TLS Certificate
-    espClient.setCACert(root_ca);
+    // Skip certificate validation since Wokwi doesn't have NTP time synced
+    espClient.setInsecure();
     
     connectWiFi();
     
