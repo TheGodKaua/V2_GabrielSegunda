@@ -67,8 +67,8 @@ class CommandManager {
         }
         
         if (payload.result === 'honk_executed') {
-            if (window.mapClient) {
-                window.mapClient.triggerHonk(vehicleId);
+            if (typeof mapClient !== 'undefined') {
+                mapClient.triggerHonk(vehicleId);
             }
         }
     }

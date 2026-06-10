@@ -39,19 +39,34 @@ class DashboardApp {
         if (history.length > 0) mapClient.fitAll();
     }
 
-    handleTelemetry(vehicleId, type, payload) {
+    async handleTelemetry(vehicleId, type, payload) {
         this.ensureVehicleExists(vehicleId);
         const vehicle = this.vehicles.get(vehicleId);
 
         if (type === 'position') {
-            vehicle.lat = payload.lat;
-            vehicle.lng = payload.lng;
+            let finalLat = payload.lat;
+            let finalLng = payload.lng;
+            
+            try {
+                // Snap to Road via OSRM (Open Source Routing Machine)
+                const response = await fetch(`https://router.project-osrm.org/nearest/v1/driving/${finalLng},${finalLat}?number=1`);
+                const data = await response.json();
+                if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
+                    finalLng = data.waypoints[0].location[0];
+                    finalLat = data.waypoints[0].location[1];
+                }
+            } catch (error) {
+                console.error("OSRM Snap to Road falhou:", error);
+            }
+
+            vehicle.lat = finalLat;
+            vehicle.lng = finalLng;
             vehicle.heading = payload.heading;
             
-            mapClient.updateVehicle(vehicleId, payload.lat, payload.lng, vehicle.speed, payload.heading, vehicle.status);
+            mapClient.updateVehicle(vehicleId, finalLat, finalLng, vehicle.speed, payload.heading, vehicle.status);
             
             // Salva no banco de dados (o db.js já tem debounce interno)
-            db.savePosition(vehicleId, payload.lat, payload.lng, vehicle.speed, payload.heading);
+            db.savePosition(vehicleId, finalLat, finalLng, vehicle.speed, payload.heading);
             
         } else if (type === 'speed') {
             vehicle.speed = payload.speed_kmh;
