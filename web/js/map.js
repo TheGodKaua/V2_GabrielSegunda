@@ -96,16 +96,49 @@ class MapManager {
 
     triggerHonk(vehicleId) {
         const marker = this.markers[vehicleId];
-        if (marker) {
-            const el = marker.getElement();
-            if (el) {
-                const wave = document.createElement('div');
-                wave.className = 'sound-wave';
-                el.appendChild(wave);
-                setTimeout(() => {
-                    if (el.contains(wave)) el.removeChild(wave);
-                }, 1000);
-            }
+        if (!marker) return;
+
+        const center = marker.getLatLng();
+        const waves = [];
+        const maxRadius = 300; // metros
+        const duration = 1200; // ms
+        const numWaves = 3;
+
+        // Cria ondas com delay escalonado
+        for (let i = 0; i < numWaves; i++) {
+            setTimeout(() => {
+                const circle = L.circle(center, {
+                    radius: 10,
+                    color: '#f59e0b',
+                    fillColor: '#f59e0b',
+                    fillOpacity: 0.4,
+                    weight: 2
+                }).addTo(this.map);
+
+                const startTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const currentRadius = 10 + (maxRadius - 10) * progress;
+                    const currentOpacity = 0.4 * (1 - progress);
+                    
+                    circle.setRadius(currentRadius);
+                    circle.setStyle({ 
+                        fillOpacity: currentOpacity, 
+                        opacity: currentOpacity * 2 
+                    });
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.map.removeLayer(circle);
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            }, i * 250); // delay de 250ms entre cada onda
         }
     }
 }

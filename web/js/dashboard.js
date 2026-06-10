@@ -4,6 +4,7 @@ class DashboardApp {
     constructor() {
         this.vehicles = new Map();
         this.selectedVehicle = null;
+        this.snapCache = new Map(); // Cache para evitar chamadas repetidas ao OSRM
         
         this.init();
     }
@@ -11,8 +12,10 @@ class DashboardApp {
     async init() {
         console.log("Iniciando FleetTracker Dashboard...");
         
-        // Registrar callbacks do MQTT
-        mqttClient.onTelemetry = this.handleTelemetry.bind(this);
+        // Registrar callbacks do MQTT (arrow function para preservar o contexto async)
+        mqttClient.onTelemetry = (vehicleId, type, payload) => {
+            this.handleTelemetry(vehicleId, type, payload);
+        };
         mqttClient.onStatus = this.handleStatus.bind(this);
         mqttClient.onAlert = this.handleAlert.bind(this);
         mqttClient.onCommandResponse = this.handleCommandResponse.bind(this);
@@ -39,34 +42,66 @@ class DashboardApp {
         if (history.length > 0) mapClient.fitAll();
     }
 
+    // Snap to Road via OSRM - com cache por grid de ~50m
+    async snapToRoad(lat, lng) {
+        // Arredonda para ~50m de precisão para cache eficiente
+        const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        
+        if (this.snapCache.has(cacheKey)) {
+            return this.snapCache.get(cacheKey);
+        }
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            const response = await fetch(
+                `https://router.project-osrm.org/nearest/v1/driving/${lng},${lat}?number=1`,
+                { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+            
+            const data = await response.json();
+            
+            if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
+                const snapped = {
+                    lat: data.waypoints[0].location[1],
+                    lng: data.waypoints[0].location[0]
+                };
+                this.snapCache.set(cacheKey, snapped);
+                
+                // Limitar cache a 500 entradas
+                if (this.snapCache.size > 500) {
+                    const firstKey = this.snapCache.keys().next().value;
+                    this.snapCache.delete(firstKey);
+                }
+                
+                return snapped;
+            }
+        } catch (error) {
+            console.warn("OSRM Snap to Road falhou, usando coordenada bruta:", error.message);
+        }
+
+        // Fallback: retorna coordenada original
+        return { lat, lng };
+    }
+
     async handleTelemetry(vehicleId, type, payload) {
         this.ensureVehicleExists(vehicleId);
         const vehicle = this.vehicles.get(vehicleId);
 
         if (type === 'position') {
-            let finalLat = payload.lat;
-            let finalLng = payload.lng;
-            
-            try {
-                // Snap to Road via OSRM (Open Source Routing Machine)
-                const response = await fetch(`https://router.project-osrm.org/nearest/v1/driving/${finalLng},${finalLat}?number=1`);
-                const data = await response.json();
-                if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
-                    finalLng = data.waypoints[0].location[0];
-                    finalLat = data.waypoints[0].location[1];
-                }
-            } catch (error) {
-                console.error("OSRM Snap to Road falhou:", error);
-            }
+            // Snap to Road: corrige a coordenada para a rua mais próxima
+            const snapped = await this.snapToRoad(payload.lat, payload.lng);
 
-            vehicle.lat = finalLat;
-            vehicle.lng = finalLng;
+            vehicle.lat = snapped.lat;
+            vehicle.lng = snapped.lng;
             vehicle.heading = payload.heading;
             
-            mapClient.updateVehicle(vehicleId, finalLat, finalLng, vehicle.speed, payload.heading, vehicle.status);
+            mapClient.updateVehicle(vehicleId, snapped.lat, snapped.lng, vehicle.speed, payload.heading, vehicle.status);
             
-            // Salva no banco de dados (o db.js já tem debounce interno)
-            db.savePosition(vehicleId, finalLat, finalLng, vehicle.speed, payload.heading);
+            // Salva no banco de dados
+            db.savePosition(vehicleId, snapped.lat, snapped.lng, vehicle.speed, payload.heading);
             
         } else if (type === 'speed') {
             vehicle.speed = payload.speed_kmh;
