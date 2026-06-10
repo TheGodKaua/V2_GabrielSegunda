@@ -4,7 +4,6 @@ class DashboardApp {
     constructor() {
         this.vehicles = new Map();
         this.selectedVehicle = null;
-        this.snapCache = new Map(); // Cache para evitar chamadas repetidas ao OSRM
         
         this.init();
     }
@@ -42,48 +41,30 @@ class DashboardApp {
         if (history.length > 0) mapClient.fitAll();
     }
 
-    // Snap to Road via OSRM - com cache por grid de ~50m
-    async snapToRoad(lat, lng) {
-        // Arredonda para ~50m de precisão para cache eficiente
-        const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-        
-        if (this.snapCache.has(cacheKey)) {
-            return this.snapCache.get(cacheKey);
-        }
-
+    // Busca a rota real pelas ruas entre dois pontos usando OSRM
+    async getRouteGeometry(fromLat, fromLng, toLat, toLng) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
             
-            const response = await fetch(
-                `https://router.project-osrm.org/nearest/v1/driving/${lng},${lat}?number=1`,
-                { signal: controller.signal }
-            );
+            const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
+            
+            const response = await fetch(url, { signal: controller.signal });
             clearTimeout(timeoutId);
             
             const data = await response.json();
             
-            if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
-                const snapped = {
-                    lat: data.waypoints[0].location[1],
-                    lng: data.waypoints[0].location[0]
-                };
-                this.snapCache.set(cacheKey, snapped);
-                
-                // Limitar cache a 500 entradas
-                if (this.snapCache.size > 500) {
-                    const firstKey = this.snapCache.keys().next().value;
-                    this.snapCache.delete(firstKey);
-                }
-                
-                return snapped;
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                // A geometria vem como array de [lng, lat] — convertemos para [lat, lng]
+                const coords = data.routes[0].geometry.coordinates;
+                return coords.map(c => ({ lat: c[1], lng: c[0] }));
             }
         } catch (error) {
-            console.warn("OSRM Snap to Road falhou, usando coordenada bruta:", error.message);
+            console.warn("OSRM Route falhou, usando linha reta:", error.message);
         }
 
-        // Fallback: retorna coordenada original
-        return { lat, lng };
+        // Fallback: retorna só o ponto de destino (linha reta)
+        return [{ lat: toLat, lng: toLng }];
     }
 
     async handleTelemetry(vehicleId, type, payload) {
@@ -91,17 +72,50 @@ class DashboardApp {
         const vehicle = this.vehicles.get(vehicleId);
 
         if (type === 'position') {
-            // Snap to Road: corrige a coordenada para a rua mais próxima
-            const snapped = await this.snapToRoad(payload.lat, payload.lng);
+            const newLat = payload.lat;
+            const newLng = payload.lng;
 
-            vehicle.lat = snapped.lat;
-            vehicle.lng = snapped.lng;
+            // Se já temos uma posição anterior, calcula a rota real pelas ruas
+            if (vehicle.lat !== null && vehicle.lng !== null) {
+                const routePoints = await this.getRouteGeometry(
+                    vehicle.lat, vehicle.lng,
+                    newLat, newLng
+                );
+
+                // Adiciona todos os pontos intermediários da rota ao mapa
+                mapClient.addRoutePoints(vehicleId, routePoints);
+
+                // Posição final é o último ponto da rota (snapped à rua)
+                const finalPoint = routePoints[routePoints.length - 1];
+                vehicle.lat = finalPoint.lat;
+                vehicle.lng = finalPoint.lng;
+            } else {
+                // Primeiro ponto: usa nearest para snappar à rua mais próxima
+                try {
+                    const response = await fetch(
+                        `https://router.project-osrm.org/nearest/v1/driving/${newLng},${newLat}?number=1`
+                    );
+                    const data = await response.json();
+                    if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
+                        vehicle.lat = data.waypoints[0].location[1];
+                        vehicle.lng = data.waypoints[0].location[0];
+                    } else {
+                        vehicle.lat = newLat;
+                        vehicle.lng = newLng;
+                    }
+                } catch (e) {
+                    vehicle.lat = newLat;
+                    vehicle.lng = newLng;
+                }
+            }
+
             vehicle.heading = payload.heading;
             
-            mapClient.updateVehicle(vehicleId, snapped.lat, snapped.lng, vehicle.speed, payload.heading, vehicle.status);
+            // Move o marcador para a posição final (na rua)
+            mapClient.updateVehicle(vehicleId, vehicle.lat, vehicle.lng, vehicle.speed, payload.heading, vehicle.status);
             
             // Salva no banco de dados
-            db.savePosition(vehicleId, snapped.lat, snapped.lng, vehicle.speed, payload.heading);
+            db.savePosition(vehicleId, vehicle.lat, vehicle.lng, vehicle.speed, payload.heading);
             
         } else if (type === 'speed') {
             vehicle.speed = payload.speed_kmh;
@@ -121,15 +135,12 @@ class DashboardApp {
         this.ensureVehicleExists(vehicleId);
         const vehicle = this.vehicles.get(vehicleId);
         
-        // Payload pode vir como string simples "offline" ou json {"status":"offline"}
         let status = typeof payload === 'string' ? payload : payload.status;
-        // remove aspas se vier do mosquitto
         status = status.replace(/"/g, ''); 
         
         vehicle.status = status;
         this.renderVehicleList();
         
-        // Atualiza cor do marcador no mapa
         if (vehicle.lat && vehicle.lng) {
             mapClient.updateVehicle(vehicleId, vehicle.lat, vehicle.lng, vehicle.speed, vehicle.heading, status);
         }
@@ -152,7 +163,6 @@ class DashboardApp {
         
         alertsList.prepend(entry);
         
-        // Salva no DB
         db.saveAlert(vehicleId, payload);
     }
 
@@ -198,13 +208,9 @@ class DashboardApp {
         
         const vehicle = this.vehicles.get(vehicleId);
         
-        // Atualiza painel de comandos
         commandClient.selectVehicle(vehicleId);
-        
-        // Centraliza mapa
         mapClient.focusVehicle(vehicleId);
         
-        // Atualiza gráficos (zera o de velocidade temporariamente ou mostra o atual)
         chartsClient.reset();
         chartsClient.updateBattery(vehicle.battery);
     }

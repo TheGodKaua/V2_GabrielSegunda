@@ -60,7 +60,20 @@ class MapManager {
         const popupSpeed = document.getElementById(`popup-speed-${vehicleId}`);
         if(popupSpeed) popupSpeed.textContent = Math.round(speed);
 
-        // Atualizar Rota (Polyline)
+        // Se não tem rota ainda, cria a polyline e adiciona o primeiro ponto
+        if (!this.routes[vehicleId]) {
+            this.routes[vehicleId] = L.polyline([], {
+                color: vehicleId.startsWith('moto') ? '#f59e0b' : '#3b82f6',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '5, 10'
+            }).addTo(this.map);
+            this.routes[vehicleId].addLatLng(latLng);
+        }
+    }
+
+    // Adiciona múltiplos pontos de rota (vindos do OSRM) à polyline do veículo
+    addRoutePoints(vehicleId, points) {
         if (!this.routes[vehicleId]) {
             this.routes[vehicleId] = L.polyline([], {
                 color: vehicleId.startsWith('moto') ? '#f59e0b' : '#3b82f6',
@@ -69,14 +82,16 @@ class MapManager {
                 dashArray: '5, 10'
             }).addTo(this.map);
         }
-        
-        this.routes[vehicleId].addLatLng(latLng);
-        
-        // Manter apenas os últimos 50 pontos da rota para não poluir
+
+        // Adiciona cada ponto da rota à polyline
+        points.forEach(p => {
+            this.routes[vehicleId].addLatLng([p.lat, p.lng]);
+        });
+
+        // Manter apenas os últimos 200 pontos para não poluir o mapa
         const coords = this.routes[vehicleId].getLatLngs();
-        if (coords.length > 50) {
-            coords.shift();
-            this.routes[vehicleId].setLatLngs(coords);
+        if (coords.length > 200) {
+            this.routes[vehicleId].setLatLngs(coords.slice(-200));
         }
     }
 
