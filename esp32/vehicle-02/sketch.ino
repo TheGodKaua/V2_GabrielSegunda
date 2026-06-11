@@ -73,7 +73,7 @@ float batteryLevel = 100.0;
 unsigned long lastPublish = 0;
 unsigned long lastBtnStatus = 0;
 unsigned long lastBtnSos = 0;
-const int PUBLISH_INTERVAL = 1000;  // 3 seconds
+const int PUBLISH_INTERVAL = 2000;  // 2 seconds
 
 // ---- MQTT Topics ----
 char topicPosition[80];
